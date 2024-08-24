@@ -3,14 +3,15 @@ import { SORT_ORDER } from "../constants/sortConstants.js";
 import { calculatePaginationData } from "../utils/calculatePaginationData.js";
 import createHttpError from "http-errors";
 
-export const getAllContacts = async ({page = 1, perPage = 10, sortOrder = SORT_ORDER.ASC, sortBy = '_id', filters = {}}) => {
+export const getAllContacts = async ({page = 1, perPage = 10, sortOrder = SORT_ORDER.ASC, sortBy = '_id', filters = {}}, id) => {
     const limit = perPage;
     const skip = (page - 1) * perPage;
-    const contactsQuery = contactsCollection.find();
+    const contactsQuery = contactsCollection.find({userId: id});
 
     if(filters.contactType) {
         contactsQuery.where('contactType').equals(filters.contactType);
     }
+
     if(filters.name) {
         contactsQuery.where('name').equals(filters.name);
     };
@@ -32,13 +33,20 @@ export const getAllContacts = async ({page = 1, perPage = 10, sortOrder = SORT_O
     };
 };
 
-export const getContactById = (id) => contactsCollection.findById(id);
-export const addContact = (data) => contactsCollection.create(data);
-export const deleteContact = (id) => contactsCollection.findByIdAndDelete(id);
+export const getContactById = (id, userId) => contactsCollection.findOne({_id:id, userId,});
+export const addContact = (data, id) => contactsCollection.create({...data, userId: id});
+export const deleteContact = async (id, userId) => {
+    const contact = await contactsCollection.findOne({_id: id, userId,});
 
-export const putchContact = async (id, data, options = {}) => {
+    if(!contact) throw createHttpError(404, 'Contact not found');
+
+    return await contactsCollection.deleteOne({_id: id});
+
+};
+
+export const putchContact = async (id, data, userId, options = {}) => {
     const result = await contactsCollection.findOneAndUpdate(
-        {_id: id},
+        {_id: id, userId,},
         data,
         {
             new: true,

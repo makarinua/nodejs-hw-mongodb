@@ -29,8 +29,12 @@ const contactSchema = new Schema ({
 		minlength: 3,
         maxlength: 20,
       },
+	  userId: {
+        type: Schema.Types.ObjectId, ref: 'users',
+        required: true,
+      }
 }, {
-    timestamps: true
+    timestamps: true,
 }
 );
 
